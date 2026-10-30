@@ -9,7 +9,8 @@ enum class TokenType{
 	SEMI_COLON,
 	EQUAL,
 	INT,
-	OPERATOR
+	OPERATOR,
+	EOL,
 };
 
 class Token{
@@ -18,11 +19,14 @@ class Token{
 		std::string string_data{};
 		double num_data{};
 		char char_data{};
+		Token(){}
 		Token(TokenType type):type(type){}
 		Token(TokenType type, std::string string_data):type(type),string_data(string_data){}
 		Token(TokenType type, double num_data):type(type),num_data(num_data){}
 		Token(TokenType type, char char_data):type(type),char_data(char_data){}
 };
 
+extern std::vector<Token> tokens;
+extern size_t current_token_index;
 std::vector<Token> line_lexer(const std::string& line, size_t line_no);
 void traverse_tokens(const std::vector<Token>& tokens);

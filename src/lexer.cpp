@@ -2,21 +2,21 @@
 #include<string>
 #include<vector>
 #include<stdexcept>
+#include<cctype>
 #include<lexer.h>
-#include<ctype.h>
 
 std::vector<Token> line_lexer(const std::string& line, size_t line_no){
 	std::vector<Token> out;
 	int i = 0;
 	int n = line.size();
 	while(i < n){
-		if(isspace(line[i])){
+		if(std::isspace(line[i])){
 			i++;
 			continue;
 		}
-		else if(isalpha(line[i]) || line[i] == '_'){
+		else if(std::isalpha(line[i]) || line[i] == '_'){
 			std::string identifier_name = "";
-			while(i < n && (isalnum(line[i]) || line[i] == '_')){
+			while(i < n && (std::isalnum(line[i]) || line[i] == '_')){
 				identifier_name += line[i++];
 			}
 			if(identifier_name == "int"){
@@ -27,7 +27,7 @@ std::vector<Token> line_lexer(const std::string& line, size_t line_no){
 		}
 		else if(isdigit(line[i])){
 			double num = 0;
-			while(i < n && isdigit(line[i])){
+			while(i < n && std::isdigit(line[i])){
 				num = num*10 + (line[i++] - '0');
 			}
 			out.push_back(Token(TokenType::NUMBER, num));
