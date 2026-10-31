@@ -10,7 +10,9 @@ enum class TokenType{
 	EQUAL,
 	INT,
 	OPERATOR,
-	EOL,
+	IO,
+	DOUBLE_LT,
+	END_OF_FILE
 };
 
 class Token{
@@ -28,5 +30,5 @@ class Token{
 
 extern std::vector<Token> tokens;
 extern size_t current_token_index;
-std::vector<Token> line_lexer(const std::string& line, size_t line_no);
+void line_lexer(const std::string& line, size_t line_no);
 void traverse_tokens(const std::vector<Token>& tokens);

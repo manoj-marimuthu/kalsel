@@ -2,13 +2,15 @@
 
 #include<memory>
 #include<string>
+#include<vector>
 
 enum class AstNodeType{
 	OPERATOR,
 	NUMBER,
 	STRING,
 	IDENTIFIER,
-	ASSIGNMENT
+	ASSIGNMENT,
+	IO_OUT
 };
 
 class AstNode{
@@ -17,6 +19,7 @@ class AstNode{
 		std::unique_ptr<AstNode> left{};
 		std::unique_ptr<AstNode> right{};
 		std::unique_ptr<AstNode> child{};
+		std::unique_ptr<AstNode> next{};
 		std::string string_data{};
 		double num_data{};
 		char char_data{};
@@ -27,5 +30,5 @@ class AstNode{
 	       		
 };
 
-
-std::unique_ptr<AstNode> Parse();
+extern std::vector<std::unique_ptr<AstNode>> ast_nodes; 
+void Parse();

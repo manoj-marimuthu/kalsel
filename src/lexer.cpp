@@ -5,8 +5,7 @@
 #include<cctype>
 #include<lexer.h>
 
-std::vector<Token> line_lexer(const std::string& line, size_t line_no){
-	std::vector<Token> out;
+void line_lexer(const std::string& line, size_t line_no){
 	int i = 0;
 	int n = line.size();
 	while(i < n){
@@ -20,9 +19,13 @@ std::vector<Token> line_lexer(const std::string& line, size_t line_no){
 				identifier_name += line[i++];
 			}
 			if(identifier_name == "int"){
-				out.push_back(Token(TokenType::INT));
-			}else{
-				out.push_back(Token(TokenType::IDENTIFIER, identifier_name));
+				tokens.push_back(Token(TokenType::INT));
+			}
+			else if(identifier_name == "io"){
+				tokens.push_back(Token(TokenType::IO));
+			}
+			else{
+				tokens.push_back(Token(TokenType::IDENTIFIER, identifier_name));
 			}
 		}
 		else if(isdigit(line[i])){
@@ -30,23 +33,26 @@ std::vector<Token> line_lexer(const std::string& line, size_t line_no){
 			while(i < n && std::isdigit(line[i])){
 				num = num*10 + (line[i++] - '0');
 			}
-			out.push_back(Token(TokenType::NUMBER, num));
+			tokens.push_back(Token(TokenType::NUMBER, num));
 		}else if(line[i] == '+' || line[i] == '-' || line[i] == '/' || line[i] == '*'){
-			out.push_back(Token(TokenType::OPERATOR, line[i++]));
+			tokens.push_back(Token(TokenType::OPERATOR, line[i++]));
+		}
+		else if(i + 1 < n && line[i] == '<' && line[i+1] == '<'){
+			tokens.push_back(Token(TokenType::DOUBLE_LT));
+			i += 2;
 		}
 		else if(line[i] == ';'){
-			out.push_back(Token(TokenType::SEMI_COLON));
+			tokens.push_back(Token(TokenType::SEMI_COLON));
 			i++;
 		}
 		else if(line[i] == '='){
-			out.push_back(Token(TokenType::EQUAL));
+			tokens.push_back(Token(TokenType::EQUAL));
 			i++;
 		}
 		else{
 			throw std::runtime_error("Undefined character found by lexer");
 		}
 	}
-	return out;
 }
 
 void traverse_tokens(const std::vector<Token>& tokens){

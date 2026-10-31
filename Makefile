@@ -2,7 +2,8 @@ TARGET = kalsel
 OBJ = build/main.o \
       build/lexer.o \
       build/parser.o \
-      build/ir.o
+      build/ir.o \
+      build/code_gen.o
 
 COM = g++
 CFLAGS = -Wall -g -Iincludes
@@ -20,5 +21,7 @@ build/parser.o: src/parser.cpp
 	$(COM) $(CFLAGS) -c src/parser.cpp -o build/parser.o
 build/ir.o: src/ir.cpp
 	$(COM) $(CFLAGS) -c src/ir.cpp -o build/ir.o
+build/code_gen.o: src/code_gen.cpp
+	$(COM) $(CFLAGS) -c src/code_gen.cpp -o build/code_gen.o
 clean:
 	rm -Rf build/*.o kalsel

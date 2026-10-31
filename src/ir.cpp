@@ -13,18 +13,20 @@ size_t current_temp_id = 0;
 std::vector<Ir_Instruction> ir_instructions = {};
 std::unordered_map<std::string, size_t> symbol_table = {};
 
-size_t generate_ir(const std::unique_ptr<AstNode>& node){
+size_t generate_ir(const AstNode* node){
 	if(!node){
 		throw std::runtime_error("generate_ir() received a null ast node \n");
 	}
+	
 	if(node->type == AstNodeType::NUMBER){
 		char inst[100];
 		snprintf(inst, sizeof(inst), "MOV t%zu, %d", current_temp_id, (int) node->num_data);
 		Ir_Instruction ir_inst(
 					Ir_InstructionType::MOV,
 					std::string(inst),
-					current_temp_id++	
-				);
+					current_temp_id++,	
+					node->num_data
+					);
 		ir_instructions.push_back(ir_inst);
 		return ir_inst.temp_id;
 	}
@@ -38,14 +40,15 @@ size_t generate_ir(const std::unique_ptr<AstNode>& node){
 					std::string(inst),
 					current_temp_id++
 				);
+		ir_inst.temp_id_2 = 8 * offset;
 		ir_instructions.push_back(ir_inst);
 		return ir_inst.temp_id;
 	}
 	else if(node && node->type == AstNodeType::OPERATOR){
 		char inst[100];
 		Ir_InstructionType ir_type{};
-		size_t left = generate_ir(node->left);
-		size_t right = generate_ir(node->right);
+		size_t left = generate_ir(node->left.get());
+		size_t right = generate_ir(node->right.get());
 		switch(node->char_data){
 			case '+':
 				snprintf(inst, sizeof(inst), "ADD t%zu, t%zu", left, right);
@@ -68,15 +71,33 @@ size_t generate_ir(const std::unique_ptr<AstNode>& node){
 				throw std::runtime_error("unknown operator found by IR generator \n");
 				break;
 		}
-		Ir_Instruction op(ir_type, inst, left);
+		Ir_Instruction op(ir_type, inst, left, right);
 		ir_instructions.push_back(op);
 		return op.temp_id;
 	}else if(node && node->type == AstNodeType::ASSIGNMENT){
 		std::string variable_name = node->left->string_data;
-		size_t result_temp_id = generate_ir(node->right);
+		size_t result_temp_id = generate_ir(node->right.get());
 		symbol_table[variable_name] = result_temp_id;
 		return result_temp_id;
-	}else{
+	}
+	else if(node && node->type == AstNodeType::IO_OUT){
+		size_t to_print_location_offset;
+		AstNode* current = node->next.get();
+		char inst[100];
+		while(current != NULL){
+			to_print_location_offset = generate_ir(current);
+			snprintf(inst, sizeof(inst), "PRINT [VBA + %zu]", to_print_location_offset);
+			Ir_Instruction ir_inst(
+						Ir_InstructionType::PRINT,
+						inst,
+						to_print_location_offset
+					);
+			ir_instructions.push_back(ir_inst);
+			current = current->next.get();
+		}
+		return to_print_location_offset;
+	}
+	else{
 		throw std::runtime_error("Unknown ast type detected by Intermediate Code Generator \n");
 	}
 	return 0;

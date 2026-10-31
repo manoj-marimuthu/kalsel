@@ -3,13 +3,14 @@
 #include<iostream>
 #include<stdexcept>
 #include<memory>
+#include<vector>
 
 Token current_token;
+std::vector<std::unique_ptr<AstNode>> ast_nodes{};
 
 static void consume(){
 	if(current_token_index + 1 >= tokens.size()){
-		current_token = Token(TokenType::EOL);
-		return;
+		throw std::runtime_error("consumption of tokens which are not present is illegal \n");
 	}
 	current_token = tokens[++current_token_index];
 }
@@ -46,7 +47,8 @@ static AstNodePtr parseAtom(){
 static AstNodePtr parseMulDiv(){
 	auto lhs = parseAtom();
 	while(current_token.type == TokenType::OPERATOR && current_token.type != TokenType::SEMI_COLON &&
-		(current_token.char_data == '*' || current_token.char_data == '/')
+	      current_token.type != TokenType::DOUBLE_LT &&
+	     (current_token.char_data == '*' || current_token.char_data == '/')
 	     )
 		{
 			auto op_node = std::make_unique<AstNode>(AstNodeType::OPERATOR, current_token.char_data);
@@ -56,7 +58,6 @@ static AstNodePtr parseMulDiv(){
 			op_node->right  = std::move(rhs);
 			lhs = std::move(op_node);
 		}
-	consume_semi_colon();
 	return lhs;
 }
 
@@ -64,7 +65,8 @@ static AstNodePtr parseAddSub(){
 	auto lhs = parseMulDiv();
 	while(current_token.type == TokenType::OPERATOR &&
  		(current_token.char_data == '+' || current_token.char_data == '-') &&
-		current_token.type != TokenType::SEMI_COLON
+		current_token.type != TokenType::SEMI_COLON &&
+		current_token.type != TokenType::DOUBLE_LT
 	     ){	
 			auto op_node = std::make_unique<AstNode>(AstNodeType::OPERATOR, current_token.char_data);
 			consume();
@@ -73,7 +75,6 @@ static AstNodePtr parseAddSub(){
 			op_node->right  = std::move(rhs);
 			lhs = std::move(op_node);
 		}
-	consume_semi_colon();
 	return lhs;
 }
 
@@ -90,10 +91,9 @@ static AstNodePtr parseVariableAssignment(){
 				node->right = parseAddSub();
 				if(current_token.type == TokenType::SEMI_COLON){
 					consume_semi_colon();
-				}else if(current_token.type == TokenType::EOL){
-					// do nothing, return the so parsed AST
 				}
 				else{
+					std::cout << (int) current_token.type << std::endl;
 					throw std::runtime_error("Expected ';': after variable assignment \n");
 				}
 				return node;
@@ -110,13 +110,45 @@ static AstNodePtr parseVariableAssignment(){
 	}
 }
 
-AstNodePtr Parse(){
-	current_token = tokens[0];
-	if(current_token.type == TokenType::INT){
-		return parseVariableAssignment();
-	}else {
-		return parseAddSub();
-	//	throw std::runtime_error("Unknown token type found by parser. Valid token type needed \n");
-	}	
+AstNodePtr parseIo(){
+	if(current_token.type == TokenType::IO){
+		consume();
+		if(current_token.type == TokenType::DOUBLE_LT){
+			AstNodePtr node = std::make_unique<AstNode>(AstNodeType::IO_OUT);		
+			AstNode* tail = node.get();
+			while(current_token.type == TokenType::DOUBLE_LT){
+				consume();
+				auto to_print = parseAddSub();
+				if(!to_print){
+					throw std::runtime_error("Expected an expression after '<<' \n");
+				}
+				tail->next = std::move(to_print);
+				tail = tail->next.get();
+			}
+			consume_semi_colon();
+			return node;
+			
+		}else{
+			throw std::runtime_error("Expected a valid token after 'io', use '<<' to print \n");
+		}
+	}
 	return nullptr;
+}
+
+void Parse(){
+	current_token = tokens[0];
+	while(current_token.type != TokenType::END_OF_FILE){
+		consume_semi_colon();
+		if(current_token.type == TokenType::INT){
+			auto node = parseVariableAssignment();
+			ast_nodes.push_back(std::move(node));
+		}
+		else if(current_token.type == TokenType::IO){
+			auto node = parseIo();
+			ast_nodes.push_back(std::move(node));
+		}
+		else {
+			throw std::runtime_error("Unknown token type found by parser. Valid token type needed \n");
+		}	
+	}
 }
